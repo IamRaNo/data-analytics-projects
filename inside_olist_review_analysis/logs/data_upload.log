@@ -1,0 +1,21 @@
+2025-12-16 17:48:06,774 - INFO - Downloading dataset from Kaggle
+2025-12-16 17:52:49,496 - INFO - Downloading dataset from Kaggle
+2025-12-16 17:52:50,932 - INFO - Kaggle download completed in 1.43 seconds
+2025-12-16 17:52:51,236 - INFO - Loading olist_customers_dataset | (99441, 5)
+2025-12-16 17:52:56,712 - INFO - olist_customers_dataset loaded in 5.48 seconds
+2025-12-16 17:52:57,879 - INFO - Loading olist_geolocation_dataset | (1000163, 5)
+2025-12-16 17:53:29,290 - INFO - olist_geolocation_dataset loaded in 31.41 seconds
+2025-12-16 17:53:29,833 - INFO - Loading olist_orders_dataset | (99441, 8)
+2025-12-16 17:53:35,082 - INFO - olist_orders_dataset loaded in 5.25 seconds
+2025-12-16 17:53:35,473 - INFO - Loading olist_order_items_dataset | (112650, 7)
+2025-12-16 17:53:41,720 - INFO - olist_order_items_dataset loaded in 6.25 seconds
+2025-12-16 17:53:41,887 - INFO - Loading olist_order_payments_dataset | (103886, 5)
+2025-12-16 17:53:47,468 - INFO - olist_order_payments_dataset loaded in 5.58 seconds
+2025-12-16 17:53:47,928 - INFO - Loading olist_order_reviews_dataset | (99224, 7)
+2025-12-16 17:53:52,714 - INFO - olist_order_reviews_dataset loaded in 4.79 seconds
+2025-12-16 17:53:52,804 - INFO - Loading olist_products_dataset | (32951, 9)
+2025-12-16 17:53:55,268 - INFO - olist_products_dataset loaded in 2.46 seconds
+2025-12-16 17:53:55,319 - INFO - Loading olist_sellers_dataset | (3095, 4)
+2025-12-16 17:53:55,859 - INFO - olist_sellers_dataset loaded in 0.54 seconds
+2025-12-16 17:53:55,891 - INFO - Loading product_category_name_translation | (71, 2)
+2025-12-16 17:53:55,958 - INFO - product_category_name_translation loaded in 0.07 seconds

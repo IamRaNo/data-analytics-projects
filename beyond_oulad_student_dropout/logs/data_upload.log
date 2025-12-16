@@ -1,0 +1,16 @@
+2025-12-16 17:55:35,540 - INFO - Downloading dataset from Kaggle
+2025-12-16 17:55:37,010 - INFO - Kaggle download completed in 1.47 seconds
+2025-12-16 17:55:37,074 - INFO - Loading assessments | (206, 6)
+2025-12-16 17:55:37,183 - INFO - assessments loaded in 0.11 seconds
+2025-12-16 17:55:37,185 - INFO - Loading courses | (22, 3)
+2025-12-16 17:55:37,257 - INFO - courses loaded in 0.07 seconds
+2025-12-16 17:55:37,331 - INFO - Loading studentAssessment | (173912, 5)
+2025-12-16 17:55:41,679 - INFO - studentAssessment loaded in 4.35 seconds
+2025-12-16 17:55:41,735 - INFO - Loading studentInfo | (32593, 12)
+2025-12-16 17:55:43,954 - INFO - studentInfo loaded in 2.22 seconds
+2025-12-16 17:55:43,975 - INFO - Loading studentRegistration | (32593, 5)
+2025-12-16 17:55:45,218 - INFO - studentRegistration loaded in 1.24 seconds
+2025-12-16 17:55:50,752 - INFO - Loading studentVle | (10655280, 6)
+2025-12-16 18:00:31,026 - INFO - studentVle loaded in 280.27 seconds
+2025-12-16 18:00:31,143 - INFO - Loading vle | (6364, 6)
+2025-12-16 18:00:31,566 - INFO - vle loaded in 0.42 seconds
