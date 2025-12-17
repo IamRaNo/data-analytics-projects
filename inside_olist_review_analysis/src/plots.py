@@ -91,7 +91,7 @@ def plot_pie(column, data):
         autopct="%.1f%%",
         colors=colors,
         startangle=90,
-        wedgeprops={'edgecolor': 'white', 'linewidth': 2},
+        wedgeprops={'edgecolor': 'black', 'linewidth': 2},
         textprops={'fontsize': 10}
     )
     
