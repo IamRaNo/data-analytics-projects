@@ -90,7 +90,7 @@ def plot_pie(column, data):
         labels=df[column],
         autopct="%.1f%%",
         colors=colors,
-        startangle=90,
+        startangle=50,
         wedgeprops={'edgecolor': 'black', 'linewidth': 2},
         textprops={'fontsize': 10}
     )
