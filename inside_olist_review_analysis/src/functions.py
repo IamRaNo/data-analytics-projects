@@ -2,19 +2,20 @@
 from sqlalchemy import create_engine,text
 import pandas as pd
 import numpy as np
+from config.settings import DB_CONFIG
 
 def get_engine(
-    user="root",
-    password="7003890541",
-    host="localhost",
-    port=3306,
-    database="synthea_medical_dataset"
+    user=DB_CONFIG['user'],
+    password=DB_CONFIG['password'],
+    host=DB_CONFIG['host'],
+    port=DB_CONFIG['port'],
+    database=DB_CONFIG['database']
 ):
     """Returns a SQLAlchemy engine for the MySQL database."""
-    return create_engine(f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}")
+    return create_engine(f"{DB_CONFIG['dialect']}+{DB_CONFIG['driver']}://{user}:{password}@{host}:{port}/{database}")
 
 
-eng = get_engine(database="synthea_medical_dataset")
+eng = get_engine()
 
 def sql(query , engine = eng):
     if engine is None:
