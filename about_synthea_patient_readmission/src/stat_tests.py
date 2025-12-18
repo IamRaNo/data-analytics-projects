@@ -1,149 +1,192 @@
-from scipy.stats import levene, ttest_ind, chi2_contingency, shapiro, mannwhitneyu, fisher_exact
+from scipy.stats import (
+    levene,
+    ttest_ind,
+    chi2_contingency,
+    shapiro,
+    mannwhitneyu,
+    fisher_exact
+)
 import numpy as np
-import pandas as pd
 
-# ==========================================
-# 1. HELPER FUNCTIONS (INTERNAL LOGIC)
-# ==========================================
+
+# ==========================================================
+# INTERNAL HELPERS
+# ==========================================================
+
+def _confidence_label(n1, n2):
+    total = n1 + n2
+    smaller = min(n1, n2)
+
+    if smaller >= 0.10 * total:
+        return "High confidence"
+    elif smaller >= 0.05 * total:
+        return "Moderate confidence"
+    else:
+        return "Low confidence"
+
 
 def _check_normality(g1, g2):
-    n1, n2 = len(g1), len(g2)
-    
-    # Large sample optimization
-    if n1 > 5000 or n2 > 5000:
-        return True, "Sample size > 5000 (CLT assumed)"
-    
-    # Shapiro-Wilk test
-    stat1, p1 = shapiro(g1)
-    stat2, p2 = shapiro(g2)
-    
-    is_normal = (p1 >= 0.05) and (p2 >= 0.05)
-    return is_normal, "Shapiro-Wilk Test"
+    if len(g1) > 5000 or len(g2) > 5000:
+        return True, "Large sample (CLT assumed)"
+
+    p1 = shapiro(g1)[1]
+    p2 = shapiro(g2)[1]
+
+    return (p1 >= 0.05 and p2 >= 0.05), "Shapiro-Wilk test"
+
 
 def _check_variance(g1, g2):
-    stat, p = levene(g1, g2)
-    equal_var = p >= 0.05
-    return equal_var, p
+    p = levene(g1, g2)[1]
+    return p >= 0.05
 
-def _calculate_cohens_d(g1, g2):
+
+def _cohens_d(g1, g2):
     n1, n2 = len(g1), len(g2)
     s1, s2 = np.std(g1, ddof=1), np.std(g2, ddof=1)
-    
-    # Pooled Standard Deviation
-    pooled_std = np.sqrt(((n1 - 1) * s1**2 + (n2 - 1) * s2**2) / (n1 + n2 - 2))
+
+    pooled_std = np.sqrt(
+        ((n1 - 1) * s1**2 + (n2 - 1) * s2**2) / (n1 + n2 - 2)
+    )
+
     d = (np.mean(g1) - np.mean(g2)) / pooled_std
-    
-    abs_d = abs(d)
-    if abs_d < 0.2: strength = "Negligible"
-    elif abs_d < 0.5: strength = "Small"
-    elif abs_d < 0.8: strength = "Medium"
-    else: strength = "Large"
-    
-    return d, strength
+    ad = abs(d)
 
-def _calculate_rank_biserial(u_stat, n1, n2):
-    rbc = 1 - (2 * u_stat) / (n1 * n2)
-    abs_rbc = abs(rbc)
-    
-    if abs_rbc < 0.1: strength = "Very Weak"
-    elif abs_rbc < 0.3: strength = "Weak"
-    elif abs_rbc < 0.5: strength = "Medium"
-    else: strength = "Strong"
-    
-    return rbc, strength
+    if ad < 0.2:
+        return d, "Negligible"
+    elif ad < 0.5:
+        return d, "Small"
+    elif ad < 0.8:
+        return d, "Medium"
+    else:
+        return d, "Large"
 
-# ==========================================
-# 2. MAIN RUNNER FUNCTIONS
-# ==========================================
 
-def compare_means(data, group_col, value_col, val):
-    # 1. Prepare Data
-    g1 = data[data[group_col] == val][value_col].dropna()
-    g2 = data[data[group_col] != val][value_col].dropna()
-    
+def _rank_biserial(u, n1, n2):
+    r = 1 - (2 * u) / (n1 * n2)
+    ar = abs(r)
+
+    if ar < 0.1:
+        return r, "Very Weak"
+    elif ar < 0.3:
+        return r, "Weak"
+    elif ar < 0.5:
+        return r, "Medium"
+    else:
+        return r, "Strong"
+
+
+# ==========================================================
+# NUMERICAL COMPARISON
+# ==========================================================
+
+def compare_means(data, group_col, value_col, focus_value):
+    g1 = data[data[group_col] == focus_value][value_col].dropna()
+    g2 = data[data[group_col] != focus_value][value_col].dropna()
+
     if len(g1) < 2 or len(g2) < 2:
-        print("❌ Error: Not enough data points to perform comparison.")
+        print("❌ Not enough data for comparison.")
         return
 
-    print(f"\n=== Comparing '{value_col}' by Group '{group_col}' ===")
-    print(f"Group 1 ({val}): n={len(g1)} | Group 2 (Others): n={len(g2)}")
+    print(f"\n=== Comparing '{value_col}' by '{group_col}' ===")
+    print(f"Group '{focus_value}': n={len(g1)} | Others: n={len(g2)}")
 
-    # 2. Check Assumptions
+    confidence = _confidence_label(len(g1), len(g2))
     is_normal, norm_reason = _check_normality(g1, g2)
-    
-    # 3. Choose and Run Test
+
     if is_normal:
-        # --- PARAMETRIC PATH (T-TEST) ---
-        equal_var, lev_p = _check_variance(g1, g2)
-        var_status = "Equal" if equal_var else "Unequal"
-        
+        equal_var = _check_variance(g1, g2)
         stat, p = ttest_ind(g1, g2, equal_var=equal_var)
-        effect_val, effect_str = _calculate_cohens_d(g1, g2)
-        
-        test_name = f"T-Test ({var_status} Variance)"
-        effect_name = "Cohen's d"
-        
-    else:
-        # --- NON-PARAMETRIC PATH (MANN-WHITNEY) ---
-        stat, p = mannwhitneyu(g1, g2, alternative='two-sided')
-        effect_val, effect_str = _calculate_rank_biserial(stat, len(g1), len(g2))
-        
-        test_name = "Mann-Whitney U Test"
-        effect_name = "Rank-Biserial"
+        eff, strength = _cohens_d(g1, g2)
 
-    # 4. Print Report
-    print(f"Test Used:      {test_name}")
-    print(f"Normality:      {norm_reason} -> {'Pass' if is_normal else 'Fail'}")
+        test_name = "T-Test"
+        eff_name = "Cohen's d"
+        reason = f"normal data ({norm_reason})"
+
+    else:
+        stat, p = mannwhitneyu(g1, g2, alternative="two-sided")
+        eff, strength = _rank_biserial(stat, len(g1), len(g2))
+
+        test_name = "Mann-Whitney U"
+        eff_name = "Rank-Biserial"
+        reason = "non-normal data"
+
+    print(f"Test Used:      {test_name} ({reason})")
     print(f"P-Value:        {p:.5f}")
-    
-    if p < 0.05:
-        print(f"Verdict:        Significant Difference ✅")
-        print(f"Effect Size:    {effect_name} = {effect_val:.3f} ({effect_str})")
-    else:
-        print(f"Verdict:        No Significant Difference ❌")
+    print(f"Confidence:     {confidence}")
 
-    print("="*20)
+    if p < 0.05:
+        print("Verdict:        Significant difference ✅")
+        print(f"Effect Size:    {eff_name} = {eff:.3f} ({strength})")
+
+        impact = {
+            "Negligible": "No practical impact",
+            "Small": "Minor impact",
+            "Medium": "Meaningful impact",
+            "Large": "Strong practical impact",
+            "Very Weak": "Minimal impact",
+            "Weak": "Limited impact",
+            "Strong": "Strong impact"
+        }.get(strength, "Moderate impact")
+
+        print(f"Practical Impact: {impact}")
+    else:
+        print("Verdict:        No significant difference ❌")
+
+    print("=" * 40)
+
+
+# ==========================================================
+# CATEGORICAL ASSOCIATION
+# ==========================================================
 
 def test_association(ct):
     print("\n=== Categorical Association Test ===")
-    
-    # 1. Run Basic Chi-Square
+
     stat, p, dof, expected = chi2_contingency(ct)
-    
-    # 2. Check Assumptions (Rule of 5)
     min_expected = expected.min()
-    sample_issue = min_expected < 5
-    
-    test_used = "Chi-Square Test"
-    
-    # 3. Fallback logic for small samples
-    if sample_issue:
+
+    test_name = "Chi-Square Test"
+    if min_expected < 5:
         if ct.shape == (2, 2):
             _, p = fisher_exact(ct)
-            test_used = "Fisher's Exact Test (Small Sample Correction)"
+            test_name = "Fisher's Exact Test"
         else:
-            print(f"⚠️ Warning: Low expected frequencies (min={min_expected:.2f}). Result may be unstable.")
+            print(f"⚠️ Low expected counts (min={min_expected:.2f})")
 
-    # 4. Calculate Strength (Cramer's V)
-    n = ct.sum().sum()
+    n = ct.to_numpy().sum()
     r, k = ct.shape
-    if n > 0 and min(r, k) > 1:
-        cramer_v = np.sqrt(stat / (n * (min(r, k) - 1)))
+    cramer_v = np.sqrt(stat / (n * (min(r, k) - 1))) if n > 0 else 0
+
+    if cramer_v < 0.1:
+        strength = "Weak"
+    elif cramer_v < 0.3:
+        strength = "Moderate"
     else:
-        cramer_v = 0.0
-        
-    if cramer_v < 0.1: strength = "Weak"
-    elif cramer_v < 0.3: strength = "Moderate"
-    else: strength = "Strong"
-    
-    # 5. Print Report
-    print(f"Test Used:      {test_used}")
+        strength = "Strong"
+
+    confidence = _confidence_label(
+        ct.sum(axis=1).min(),
+        ct.sum(axis=1).max()
+    )
+
+    print(f"Test Used:      {test_name}")
     print(f"P-Value:        {p:.5f}")
-    
+    print(f"Confidence:     {confidence}")
+
     if p < 0.05:
-        print(f"Verdict:        Significant Dependence ✅")
-        print(f"Strength:       Cramer's V = {cramer_v:.3f} ({strength})")
+        print("Verdict:        Significant association ✅")
+        print(f"Effect Size:    Cramér's V = {cramer_v:.3f} ({strength})")
+
+        impact = {
+            "Weak": "Limited influence",
+            "Moderate": "Noticeable influence",
+            "Strong": "Strong influencing factor"
+        }[strength]
+
+        print(f"Practical Impact: {impact}")
+        print(f"Conclusion:     Association exists with {strength.lower()} strength.")
     else:
-        print(f"Verdict:        Independent (No Relationship) ❌")
-    
-    print("="*20)
+        print("Verdict:        No association ❌")
+        print("Conclusion:     No evidence of relationship.")
+
+    print("=" * 40)
