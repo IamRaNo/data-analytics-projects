@@ -1,4 +1,5 @@
-GDRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/XXXX"
+# Kaggle dataset link for this project
+KAGGLE_DATASET = "kaggle/link-dataset"
 
 DB_CONFIG = {
     "dialect": "mysql",
