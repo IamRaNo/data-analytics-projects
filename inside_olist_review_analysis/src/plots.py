@@ -21,7 +21,7 @@ def apply_custom_style():
     plt.rcParams.update({
         'figure.facecolor': 'white',
         'axes.facecolor': 'white',
-        'axes.grid': True,          # Global default (can be overridden)
+        'axes.grid': True,         
         'grid.alpha': 0.4,
         'grid.color': '#e6e6e6',
         'axes.spines.top': False,
@@ -58,7 +58,6 @@ def _add_title_subtitle(ax, title, subtitle):
 # ==========================================
 
 def plot_pie(column, data):
-    # Safe: value_counts returns a new object
     df = data[column].value_counts(normalize=True).mul(100).round(2).reset_index(name='percentage')
     ax = plt.gca()
     colors = _get_random_palette(n_colors=len(df))
@@ -165,7 +164,6 @@ def plot_stacked(crosstab, orient='v'):
 def plot_risk_by_bins(data, x_col, target_col, bins=10):
     ax = plt.gca()
     
-    # --- SAFETY FIX: Work on a copy ---
     df = data.copy()
     
     if df[target_col].dtype == 'object':
@@ -197,15 +195,10 @@ def plot_risk_by_bins(data, x_col, target_col, bins=10):
 # ==========================================
 
 def plot_describe_dashboard(data, group_col, value_col):
-    """
-    Visualizes stats (describe) in a 2x4 grid using the CURRENT Figure.
-    IMPORTANT: Initialize figure size yourself before calling.
-    """
     desc = data.groupby(group_col)[value_col].describe().round(2).reset_index()
     desc[group_col] = desc[group_col].astype(str)
     metrics = [col for col in desc.columns if col != group_col]
 
-    # Get CURRENT figure
     fig = plt.gcf()
     gs = gridspec.GridSpec(2, 4, figure=fig)
     
@@ -226,46 +219,35 @@ def plot_describe_dashboard(data, group_col, value_col):
             ax.set_ylabel(group_col.replace('_', ' ').title(), fontweight='bold')
         else:
             ax.set_ylabel(''); ax.set_yticklabels([])
-
-        # --- GRID DISABLED ---
         ax.grid(False)
 
     plt.suptitle(f"Statistical Summary: {value_col} by {group_col}", fontsize=22, fontweight='bold', x=0.01, ha='left', y=1.05)
 
 
 def plot_numeric(data, col, target):
-    """
-    Master visualization: Numerical vs Categorical (KDE, Box, & Stats).
-    IMPORTANT: Initialize figure size yourself before calling.
-    """
-    # --- SAFETY FIX: Copy data first ---
+
     plot_data = data.copy()
     
     plot_data[col] = pd.to_numeric(plot_data[col], errors='coerce')
     plot_data = plot_data.dropna(subset=[col, target])
     
-    # Get CURRENT figure
     fig = plt.gcf()
     gs = gridspec.GridSpec(3, 4, figure=fig, height_ratios=[3, 1, 1])
     main_palette = _get_random_palette() 
 
-    # --- Row 1: Visuals ---
     ax_kde = fig.add_subplot(gs[0, :2])
     sns.kdeplot(data=plot_data, x=col, hue=target, fill=True, linewidth=2, 
                 palette=main_palette, alpha=0.3, ax=ax_kde, warn_singular=False)
     ax_kde.set_title(f"Distribution: {col} by {target}", fontsize=14, fontweight='bold'); ax_kde.set_xlabel('')
     
-    # --- GRID DISABLED ---
     ax_kde.grid(False) 
 
     ax_box = fig.add_subplot(gs[0, 2:])
     sns.boxplot(data=plot_data, x=col, y=target, orient='h', palette=main_palette, linewidth=1.5, ax=ax_box)
     ax_box.set_title(f"Outliers: {col} by {target}", fontsize=14, fontweight='bold'); ax_box.set_xlabel('')
-    
-    # --- GRID DISABLED ---
+
     ax_box.grid(False)
 
-    # --- Row 2 & 3: Stats ---
     desc = plot_data.groupby(target)[col].describe().round(2).reset_index()
     desc[target] = desc[target].astype(str)
     metrics = [m for m in desc.columns if m != target]
@@ -285,8 +267,7 @@ def plot_numeric(data, col, target):
             ax.set_ylabel(target.replace('_', ' ').title(), fontweight='bold')
         else:
             ax.set_ylabel(''); ax.set_yticklabels([])
-            
-        # --- GRID DISABLED ---
+
         ax.grid(False)
 
     plt.suptitle(f"Deep Dive: {col} vs {target}", fontsize=24, fontweight='bold', y=1.02)
@@ -294,12 +275,6 @@ def plot_numeric(data, col, target):
 
 
 def plot_categorical(data, col, target, order=None):
-    """
-    Master visualization: Categorical vs Categorical.
-    Left: 100% Stacked Bar | Right: Heatmap (Count + %)
-    IMPORTANT: Initialize figure size yourself before calling.
-    """
-    # Safe: dropna returns a new object
     plot_data = data.dropna(subset=[col, target])
     
     ct_counts = pd.crosstab(plot_data[col], plot_data[target])
@@ -309,12 +284,10 @@ def plot_categorical(data, col, target, order=None):
         ct_counts = ct_counts.reindex(order)
         ct_props = ct_props.reindex(order)
 
-    # Get CURRENT figure
     fig = plt.gcf()
     gs = gridspec.GridSpec(1, 2, figure=fig, width_ratios=[4, 1], wspace=0.02,
                            left=0.05, right=0.95, top=0.80, bottom=0.1)
-    
-    # --- Left: Stacked Bar ---
+
     ax_bar = fig.add_subplot(gs[0, 0])
     bar_colors = _get_random_palette(n_colors=len(ct_props.columns))
     
@@ -329,8 +302,7 @@ def plot_categorical(data, col, target, order=None):
     ax_bar.set_xlabel("Proportion", fontweight='bold'); ax_bar.set_ylabel('')
     ax_bar.legend(title=target.replace('_', ' ').title(), bbox_to_anchor=(1.0, 1.02), loc='lower right', ncols=4, frameon=False)
     ax_bar.set_title(f"Proportions: {col} vs {target}", fontsize=16, fontweight='bold', loc='left', y=1.02)
-    
-    # --- Right: Heatmap ---
+
     ax_heat = fig.add_subplot(gs[0, 1])
     grand_total = ct_counts.values.sum()
     heatmap_labels = ct_counts.applymap(lambda x: f"{x}\n({x/grand_total*100:.1f}%)")
@@ -347,13 +319,9 @@ def plot_categorical(data, col, target, order=None):
 
 
 def plot_masked_categorical(data, col, mask_value, target, order=None):
-    """
-    Wrapper for plot_categorical that compares ONE value vs 'OTHERS'.
-    IMPORTANT: Initialize figure size yourself before calling.
-    """
+
     mask = data[col] == mask_value
     
-    # --- SAFETY FIX: Ensure we are working on a copy ---
     temp_df = data.copy()
     
     comp_col = f"{col} Comparison" 
