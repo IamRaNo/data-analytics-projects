@@ -170,8 +170,8 @@ def plot_risk_by_bins(data, x_col, target_col, bins=10):
     
     if df[target_col].dtype == 'object':
         unique = df[target_col].unique()
-        if 'low' in unique or 'high' in unique:
-            df[target_col] = df[target_col].map({'low': 1, 'high': 0})
+        if 'Withdrawn' in unique or 'Stayed' in unique:
+            df[target_col] = df[target_col].map({'Withdrawn': 1, 'Stayed': 0})
 
     try:
         df['bin'] = pd.qcut(df[x_col], q=bins, duplicates='drop')
